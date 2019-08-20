@@ -5,7 +5,7 @@ const mysql = require('mysql');
 const url = 'http://zdg.meilianji.cn/zhdg/index.php';
 
 (function() {
-  for (let index = 701; index <= 718; index++) {
+  for (let index = 101; index <= 200; index++) {
     WapperSuperAgent(index);
   }
 })();
@@ -21,7 +21,7 @@ var pool = mysql.createPool({
 function WapperSuperAgent(page) {
   superagent
     .get(url)
-    .set('Cookie', 'PHPSESSID=cpscrltdvpab886259s1ec4c50')
+    .set('Cookie', 'PHPSESSID=4u3tq56oac2bnrud9d1gi6rlb5')
     .query({
       r: 'user/main',
       page: page
@@ -31,7 +31,7 @@ function WapperSuperAgent(page) {
       let postlist = getFilterHtml(res.text);
       // 存入数据库操作...
       console.log(postlist);
-      // insertSqlFromJson(postlist);
+      insertSqlFromJson(postlist);
     });
 }
 
@@ -42,7 +42,7 @@ function insertSqlFromJson(postlist) {
     var myquery;
     for (var i = 0; i < gdata.length; i++) {
       myquery =
-        "INSERT INTO users (`id`,`nikename`,`username`,`sex`,`integral`, `phone`,`image`,`code`,`invitees`,`createDate`)VALUES ( '" +
+        "INSERT INTO in_users (`id`,`nikename`,`username`,`sex`,`integral`, `phone`,`image`,`code`,`invitees`,`createDate`)VALUES ( '" +
         gdata[i].id +
         "', '" +
         gdata[i].nikename +

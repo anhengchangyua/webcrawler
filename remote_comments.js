@@ -30,29 +30,9 @@ function WapperSuperAgent(page) {
       if (err) throw Error(err);
       let postlist = getFilterHtml(res.text);
       // 存入数据库操作...
-      //   console.log(postlist);
+      console.log(postlist);
       //   insertSqlFromJson(postlist);
     });
-}
-
-function converToUserId(params) {
-  var regex = params.match(/[0-9]{1,11}$/);
-  pool.getConnection(function(err, connection) {
-    var myquery = 'SELECT id from in_users where phone =' + regex[0];
-    console.log(regex[0]);
-    connection.query(myquery, function(err, result) {
-      if (result) {
-        if (result[0]) {
-          console.log(result[0].id);
-        }
-      } else {
-        result = { status: 0, msg: err };
-        console.log(result);
-      }
-    });
-    // 释放连接
-    connection.release();
-  });
 }
 
 function getFilterHtml(html) {
@@ -61,13 +41,23 @@ function getFilterHtml(html) {
 
   $('tbody tr').each((index, item) => {
     let elem = $(item);
-    converToUserId(
-      elem
-        .find('td')
-        .eq(4)
-        .text()
-        .trim()
-    );
+
+    function converToUserId(params) {
+      var regex = params.match(/[0-9]{1,11}$/);
+      pool.getConnection(function(err, connection) {
+        var myquery = 'SELECT id from in_users where phone =' + regex[0];
+        connection.query(myquery, function(err, result) {
+          if (result) {
+            return result[0].id;
+          } else {
+            result = { status: 0, msg: err };
+          }
+        });
+        // 释放连接
+        connection.release();
+      });
+    }
+
     let post = {
       id: elem
         .find('td')
@@ -84,11 +74,13 @@ function getFilterHtml(html) {
           ? 1
           : 0,
 
-      user_id: elem
-        .find('td')
-        .eq(4)
-        .text()
-        .trim(),
+      user_id: converToUserId(
+        elem
+          .find('td')
+          .eq(4)
+          .text()
+          .trim()
+      ),
 
       news_id: elem
         .find('td')

@@ -5,7 +5,7 @@ const mysql = require('mysql');
 const url = 'http://zdg.meilianji.cn/zhdg/index.php';
 
 (function() {
-  for (let index = 101; index <= 200; index++) {
+  for (let index = 1; index <= 51; index++) {
     WapperSuperAgent(index);
   }
 })();

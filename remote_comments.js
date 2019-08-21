@@ -5,9 +5,9 @@ const mysql = require('mysql');
 const url = 'http://zdg.meilianji.cn/zhdg/index.php';
 
 (function() {
-  //   for (let index = 701; index <= 718; index++) {
-  WapperSuperAgent(1);
-  //   }
+  for (let index = 201; index <= 228; index++) {
+    WapperSuperAgent(index);
+  }
 })();
 
 var pool = mysql.createPool({
@@ -21,7 +21,7 @@ var pool = mysql.createPool({
 function WapperSuperAgent(page) {
   superagent
     .get(url)
-    .set('Cookie', 'PHPSESSID=4u3tq56oac2bnrud9d1gi6rlb5')
+    .set('Cookie', 'PHPSESSID=f6n3hjtjkicbu79hkdon5tkgp3')
     .query({
       r: 'news_comment/main1',
       page: page
@@ -30,9 +30,46 @@ function WapperSuperAgent(page) {
       if (err) throw Error(err);
       let postlist = getFilterHtml(res.text);
       // 存入数据库操作...
-      console.log(postlist);
-      //   insertSqlFromJson(postlist);
+      insertSqlFromJson(postlist);
     });
+}
+
+function converToUserId(params) {
+  params.forEach(element => {
+    var regex = element.user_info.match(/[0-9]{1,11}$/);
+    pool.getConnection(function(err, connection) {
+      var myquery = 'SELECT id from in_users where phone =' + regex[0];
+      connection.query(myquery, function(err, result) {
+        if (result) {
+          var iditem = {
+            user_id: result[0].id
+          };
+          myquery =
+            'UPDATE in_home_newscomment  SET user_id = ? where user_info = ?';
+          connection.query(
+            myquery,
+            [iditem.user_id, element.user_info],
+            function(err, result) {
+              if (result) {
+                result = {
+                  code: 200,
+                  msg: '增加成功'
+                };
+                console.log(result);
+              } else {
+                result = { status: 0, msg: err };
+                console.log(result);
+              }
+            }
+          );
+        } else {
+          result = { status: 0, msg: err };
+        }
+      });
+      // 释放连接
+      connection.release();
+    });
+  });
 }
 
 function getFilterHtml(html) {
@@ -41,22 +78,6 @@ function getFilterHtml(html) {
 
   $('tbody tr').each((index, item) => {
     let elem = $(item);
-
-    function converToUserId(params) {
-      var regex = params.match(/[0-9]{1,11}$/);
-      pool.getConnection(function(err, connection) {
-        var myquery = 'SELECT id from in_users where phone =' + regex[0];
-        connection.query(myquery, function(err, result) {
-          if (result) {
-            return result[0].id;
-          } else {
-            result = { status: 0, msg: err };
-          }
-        });
-        // 释放连接
-        connection.release();
-      });
-    }
 
     let post = {
       id: elem
@@ -74,13 +95,11 @@ function getFilterHtml(html) {
           ? 1
           : 0,
 
-      user_id: converToUserId(
-        elem
-          .find('td')
-          .eq(4)
-          .text()
-          .trim()
-      ),
+      user_info: elem
+        .find('td')
+        .eq(4)
+        .text()
+        .trim(),
 
       news_id: elem
         .find('td')
@@ -124,12 +143,12 @@ function insertSqlFromJson(postlist) {
     var myquery;
     for (var i = 0; i < gdata.length; i++) {
       myquery =
-        "INSERT INTO in_home_newscomment (`id`,`is_check`,`user_id`,`news_id`,`title`, `like_number`,`content`,`comment_time`)VALUES ( '" +
+        "INSERT INTO in_home_newscomment (`id`,`is_check`,`user_info`, `news_id`,`title`, `like_number`,`content`,`comment_time`)VALUES ( '" +
         gdata[i].id +
         "', '" +
         gdata[i].is_check +
         "', '" +
-        gdata[i].user_id +
+        gdata[i].user_info +
         "', '" +
         gdata[i].news_id +
         "', '" +
@@ -144,16 +163,12 @@ function insertSqlFromJson(postlist) {
 
       connection.query(myquery, function(err, result) {
         if (result) {
-          result = {
-            code: 200,
-            msg: '增加成功'
-          };
         } else {
           result = { status: 0, msg: err };
-          console.log(result);
         }
       });
     }
+    converToUserId(gdata);
     // 释放连接
     connection.release();
   });
